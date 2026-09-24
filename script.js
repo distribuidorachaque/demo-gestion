@@ -2353,11 +2353,39 @@ function renderVistaConfig() {
       <label>🔌 Conexión con Google (avanzado)</label>
       <p class="muted" style="font-size:12px; margin:2px 0 6px;">Pegá acá la dirección del Apps Script de tu Google (te la damos en el instructivo de instalación). Si lo dejás vacío, la app funciona igual pero guarda todo solo en este celular, sin respaldo ni sincronización.</p>
       <input id="cfgNegApiUrl" type="text" value="${esc(c.apiUrl)}" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom:6px;" />
-      <button class="btn-gray btn-full" style="margin-bottom:14px;" onclick="probarConexionGoogle()">🔌 Probar conexión</button>
+      <button class="btn-gray btn-full" style="margin-bottom:8px;" onclick="probarConexionGoogle()">🔌 Probar conexión</button>
+      <button class="btn-gray btn-full" style="margin-bottom:14px;" onclick="probarGuardado()">🧪 Probar guardado</button>
 
       <button class="btn-primary btn-full" onclick="guardarConfigNegocio()">💾 Guardar configuración</button>
     </div>
   `;
+}
+
+// Prueba de guardado directo: manda UN registro de prueba y verifica si llegó.
+// Sirve para aislar si el problema es el envío (POST) o el resto de la app.
+async function probarGuardado() {
+  const url = document.getElementById("cfgNegApiUrl").value.trim();
+  if (!url || url.indexOf("http") !== 0) { alert("Primero pegá la dirección y tocá 'Probar conexión'."); return; }
+  alert("Probando guardado… mirá también la pantalla de Ejecuciones del Apps Script. Esperá unos segundos.");
+  const marca = "PRUEBA_GUARDADO_" + Date.now();
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({ tipo: "clientes", payload: [{ id: marca, nombre: marca, _prueba: true }] })
+    });
+    await new Promise(r => setTimeout(r, 3000));
+    const r = await fetch(url + "?tipo=clientes");
+    const filas = await r.json();
+    const llego = filas.some(f => String(f[0]).indexOf(marca) !== -1);
+    if (llego) {
+      alert("✅ ¡GUARDADO OK! La app puede escribir en tu Google. (Podés borrar la fila de prueba de la pestaña 'clientes'.)");
+    } else {
+      alert("❌ El guardado NO llegó. En Ejecuciones fijate: si NO aparece 'doPost', el problema es el envío y lo arreglo por otro lado.");
+    }
+  } catch (e) {
+    alert("❌ Error probando guardado: " + e.message);
+  }
 }
 
 // Prueba la dirección del Apps Script que se pegó, sin guardarla todavía.
