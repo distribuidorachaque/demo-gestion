@@ -168,15 +168,15 @@ function getKmMesActual() {
   return kmPorMes[claveMesActual()] || 0;
 }
 let configVehiculo = JSON.parse(localStorage.getItem("demo_config_vehiculo_v1") || "null") || {
-  seguro: 70000,
-  celular: 8000,
+  seguro: 0,
+  celular: 0,
   monotributo: 0,
-  servicioCosto: 70000,
-  servicioKm: 10000,
-  cubiertasCosto: 540000,
-  cubiertasKm: 60000,
-  bateriaCosto: 200000,
-  bateriaAnios: 3,
+  servicioCosto: 0,
+  servicioKm: 0,
+  cubiertasCosto: 0,
+  cubiertasKm: 0,
+  bateriaCosto: 0,
+  bateriaAnios: 0,
   actualizadoEn: 0
 };
 
