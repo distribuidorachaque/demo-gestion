@@ -177,11 +177,11 @@ let configVehiculo = JSON.parse(localStorage.getItem("demo_config_vehiculo_v1") 
   celular: 0,
   monotributo: 0,
   servicioCosto: 0,
-  servicioKm: 0,
+  servicioKm: 10000,
   cubiertasCosto: 0,
-  cubiertasKm: 0,
+  cubiertasKm: 40000,
   bateriaCosto: 0,
-  bateriaAnios: 0,
+  bateriaAnios: 3,
   actualizadoEn: 0
 };
 
@@ -1430,12 +1430,12 @@ function calcularGastosExtraMes(mes, anio) {
 
 function calcularCostosVehiculo(kmDelMes, naftaDelMes, extraordinariosDelMes) {
   const cv = configVehiculo;
-  const costoServicioPorKm  = cv.servicioCosto / cv.servicioKm;
-  const costoCubiertasPorKm = cv.cubiertasCosto / cv.cubiertasKm;
+  const costoServicioPorKm  = cv.servicioKm  > 0 ? cv.servicioCosto  / cv.servicioKm  : 0;
+  const costoCubiertasPorKm = cv.cubiertasKm > 0 ? cv.cubiertasCosto / cv.cubiertasKm : 0;
   const costoNaftaPorKm     = kmDelMes > 0 ? naftaDelMes / kmDelMes : 0;
   const costoPorKm = costoServicioPorKm + costoCubiertasPorKm + costoNaftaPorKm;
 
-  const bateriaMensual = cv.bateriaCosto / (cv.bateriaAnios * 12);
+  const bateriaMensual = cv.bateriaAnios > 0 ? cv.bateriaCosto / (cv.bateriaAnios * 12) : 0;
   const gastosFijosMes = cv.seguro + cv.celular + (cv.monotributo || 0) + bateriaMensual;
 
   const costoVehiculoMes = costoPorKm * kmDelMes;
