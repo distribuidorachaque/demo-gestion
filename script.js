@@ -2,16 +2,18 @@
 // PEDIDOS ALUNEXA / FUNGIMANIA
 // ═══════════════════════════════════════════════════════════════
 
-const API_URL = "https://script.google.com/macros/s/AKfycbyfH5zvUfGZmX_45u2JckvHvpR4bD2-CeMpi-27Bm94RMtNNiBUWPi2162xdiLUN8fx6w/exec";
-
-// ── DEMO: conexión a Google APAGADA ──────────────────────────────────────────
-// Con esto en false, la app NUNCA lee ni escribe datos en ningún backend de
-// Google: trabaja sola con la memoria del celular. Así se prueba sin tocar los
-// datos reales de nadie. En una copia conectada a un backend propio se pone en
-// true (y se cambia API_URL por el del cliente).
-const CONECTAR_GOOGLE = false;
+// La dirección del backend (el Apps Script del Google del cliente) se carga
+// desde ⚙️ Config → Avanzado. Se completa más abajo, cuando se lee configNegocio.
+//   - Vacía  → la app trabaja SOLA en el celular (no sincroniza con nada).
+//   - Con una URL válida → se conecta al Google de ESE cliente.
+let API_URL = "";
+function backendConectado() {
+  return typeof API_URL === "string" && API_URL.indexOf("http") === 0;
+}
 function backendFetch() {
-  if (!CONECTAR_GOOGLE) {
+  if (!backendConectado()) {
+    // Sin conexión configurada: devolvemos una respuesta vacía para que quien
+    // lee (await r.json()) reciba [] y no haga nada, sin errores.
     return Promise.resolve({ ok: true, json: async () => [], text: async () => "" });
   }
   return fetch.apply(null, arguments);
@@ -107,12 +109,15 @@ const CONFIG_NEGOCIO_DEFAULT = {
   email: "",
   aliasPago: "",
   logo: "",
+  apiUrl: "",          // dirección del Apps Script del Google del cliente (se pega en Config → Avanzado)
   actualizadoEn: 0
 };
 let configNegocio = {
   ...CONFIG_NEGOCIO_DEFAULT,
   ...(JSON.parse(localStorage.getItem("demo_config_negocio_v1") || "null") || {})
 };
+// Tomamos la dirección del backend desde la configuración guardada.
+API_URL = configNegocio.apiUrl || "";
 
 function getLogoFactura() {
   return (configNegocio.logo && configNegocio.logo.length > 20) ? configNegocio.logo : LOGO_FACTURA_BASE64;
@@ -228,8 +233,8 @@ let syncEnCurso = false;
 // segundo, y vuelve a consultar Drive para confirmar que realmente llegaron.
 // Si no coincide, reintenta hasta 3 veces antes de avisar que falló.
 async function guardarEnDriveConVerificacion(onProgreso) {
-  // DEMO desconectada: guardamos solo en el celular y avisamos que salió bien.
-  if (!CONECTAR_GOOGLE) { guardarLocal(); return true; }
+  // Sin conexión a Google configurada: guardamos solo en el celular y avisamos que salió bien.
+  if (!backendConectado()) { guardarLocal(); return true; }
   if (syncEnCurso) {
     // Ya hay otro guardado/sincronización en curso: esperamos un poco y
     // probamos de nuevo en vez de pisarlo.
@@ -2344,9 +2349,30 @@ function renderVistaConfig() {
         </div>
       </div>
 
+      <hr style="margin:18px 0; border:none; border-top:1px solid #eee;" />
+      <label>🔌 Conexión con Google (avanzado)</label>
+      <p class="muted" style="font-size:12px; margin:2px 0 6px;">Pegá acá la dirección del Apps Script de tu Google (te la damos en el instructivo de instalación). Si lo dejás vacío, la app funciona igual pero guarda todo solo en este celular, sin respaldo ni sincronización.</p>
+      <input id="cfgNegApiUrl" type="text" value="${esc(c.apiUrl)}" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom:6px;" />
+      <button class="btn-gray btn-full" style="margin-bottom:14px;" onclick="probarConexionGoogle()">🔌 Probar conexión</button>
+
       <button class="btn-primary btn-full" onclick="guardarConfigNegocio()">💾 Guardar configuración</button>
     </div>
   `;
+}
+
+// Prueba la dirección del Apps Script que se pegó, sin guardarla todavía.
+async function probarConexionGoogle() {
+  const url = document.getElementById("cfgNegApiUrl").value.trim();
+  if (!url) { alert("Primero pegá la dirección del Apps Script."); return; }
+  if (url.indexOf("http") !== 0) { alert("La dirección tiene que empezar con https://"); return; }
+  alert("Probando conexión… (esperá unos segundos)");
+  try {
+    const r = await fetch(url + "?tipo=clientes");
+    await r.json();
+    alert("✅ ¡Conexión OK! Ahora tocá 'Guardar configuración' para dejarla activada.");
+  } catch (e) {
+    alert("❌ No se pudo conectar.\n\nRevisá que:\n• La dirección esté completa y termine en /exec\n• El Apps Script esté publicado con acceso 'Cualquier persona'");
+  }
 }
 
 function subirLogoNegocio(event) {
@@ -2370,10 +2396,12 @@ function guardarConfigNegocio() {
     telefono:  document.getElementById("cfgNegTelefono").value.trim(),
     email:     document.getElementById("cfgNegEmail").value.trim(),
     aliasPago: document.getElementById("cfgNegAlias").value.trim(),
+    apiUrl:    document.getElementById("cfgNegApiUrl").value.trim(),
     logo:      nuevoLogo || "",
     actualizadoEn: Date.now()
   };
   localStorage.setItem("demo_config_negocio_v1", JSON.stringify(configNegocio));
+  API_URL = configNegocio.apiUrl || "";   // tomamos la nueva dirección al toque
   backendFetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ tipo: "negocio", payload: [configNegocio] }) });
   alert("✅ Configuración guardada.");
   renderApp();
