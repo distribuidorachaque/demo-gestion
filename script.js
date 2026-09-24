@@ -5123,7 +5123,7 @@ function initOfflineIndicator() {
 // URL de TU panel de licencias (central, el mismo para todos los clientes).
 // Se completa UNA sola vez con la dirección de tu panel. Mientras diga
 // "PEGAR..." la app NO pide código (modo libre, sirve para probar).
-const LICENCIA_URL = "PEGAR_AQUI_LA_URL_DE_TU_PANEL";
+const LICENCIA_URL = "https://script.google.com/macros/s/AKfycby03weXlWg05LLro9mC0TjfuQ7b_TnFGxmymHE3Q2fhfqbYhwjj40IHRyV6jR0W6Qzi/exec";
 const DIAS_GRACIA_SIN_INTERNET = 7; // si no hay internet, sigue andando estos días desde el último chequeo OK
 
 let licencia = JSON.parse(localStorage.getItem("demo_licencia_v1") || "null") || { codigo: "", activa: false, ultimoOk: 0, cliente: "" };
