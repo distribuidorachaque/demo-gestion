@@ -87,10 +87,10 @@ const IVA_RATE = 0.21;
 const STOCK_BAJO_UMBRAL = 5;
 const DIAS_INACTIVIDAD_UMBRAL = 7; // días sin comprar para que el cliente se marque como "frío"
 const STORAGE_KEYS = {
-  clients: "alunexa_clients_v1",
-  catalog: "alunexa_catalog_v8_google",
-  orders: "alunexa_orders_v1",
-  inversiones: "alunexa_inversiones_v1"
+  clients: "demo_clients_v1",
+  catalog: "demo_catalog_v8_google",
+  orders: "demo_orders_v1",
+  inversiones: "demo_inversiones_v1"
 };
 const TIPOS_CLIENTE = ["Farmacia", "Dietética", "Supermercado", "Verdulería", "Kiosco", "Gimnasio", "Otro"];
 const DIAS_VISITA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
@@ -111,7 +111,7 @@ const CONFIG_NEGOCIO_DEFAULT = {
 };
 let configNegocio = {
   ...CONFIG_NEGOCIO_DEFAULT,
-  ...(JSON.parse(localStorage.getItem("alunexa_config_negocio_v1") || "null") || {})
+  ...(JSON.parse(localStorage.getItem("demo_config_negocio_v1") || "null") || {})
 };
 
 function getLogoFactura() {
@@ -156,8 +156,8 @@ let modoBorrador      = false;
 let filtroStock       = "Todas";
 let costosVehiculoAbierto = false;
 let gastosExtraAbierto = false;
-let kmPorMes = JSON.parse(localStorage.getItem("alunexa_km_por_mes_v1") || "{}");
-let metaPorMes = JSON.parse(localStorage.getItem("alunexa_meta_por_mes_v1") || "{}");
+let kmPorMes = JSON.parse(localStorage.getItem("demo_km_por_mes_v1") || "{}");
+let metaPorMes = JSON.parse(localStorage.getItem("demo_meta_por_mes_v1") || "{}");
 
 function claveMesActual() {
   const hoy = new Date();
@@ -167,7 +167,7 @@ function claveMesActual() {
 function getKmMesActual() {
   return kmPorMes[claveMesActual()] || 0;
 }
-let configVehiculo = JSON.parse(localStorage.getItem("alunexa_config_vehiculo_v1") || "null") || {
+let configVehiculo = JSON.parse(localStorage.getItem("demo_config_vehiculo_v1") || "null") || {
   seguro: 70000,
   celular: 8000,
   monotributo: 0,
@@ -195,7 +195,7 @@ Object.keys(metaPorMes).forEach(k => {
 });
 if (huboMigracionLocal) {
   configVehiculo.actualizadoEn = Date.now();
-  localStorage.setItem("alunexa_config_vehiculo_v1", JSON.stringify(configVehiculo));
+  localStorage.setItem("demo_config_vehiculo_v1", JSON.stringify(configVehiculo));
   backendFetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ tipo: "vehiculo", payload: [configVehiculo] }) });
 }
 // A partir de acá, kmPorMes y metaPorMes apuntan al mismo objeto que
@@ -1387,7 +1387,7 @@ function guardarConfigVehiculo() {
     bateriaAnios: parseNumber(document.getElementById("cfgBateriaAnios").value) || 1,
     actualizadoEn: Date.now()
   };
-  localStorage.setItem("alunexa_config_vehiculo_v1", JSON.stringify(configVehiculo));
+  localStorage.setItem("demo_config_vehiculo_v1", JSON.stringify(configVehiculo));
   // La mandamos a Drive para que se vea igual en todos tus dispositivos
   backendFetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ tipo: "vehiculo", payload: [configVehiculo] }) });
   kmPorMes = configVehiculo.kmPorMes;
@@ -1407,7 +1407,7 @@ async function sincronizarConfigVehiculo() {
       configVehiculo = remoto;
       kmPorMes = configVehiculo.kmPorMes;
       metaPorMes = configVehiculo.metaPorMes;
-      localStorage.setItem("alunexa_config_vehiculo_v1", JSON.stringify(configVehiculo));
+      localStorage.setItem("demo_config_vehiculo_v1", JSON.stringify(configVehiculo));
       if (vistaActual === "resumen") renderVistaResumen();
     }
   } catch (e) {
@@ -1582,7 +1582,7 @@ function guardarMetaMes() {
   const val = parseNumber(document.getElementById("inputMetaMes")?.value) || 0;
   metaPorMes[mesResumen] = val;
   configVehiculo.actualizadoEn = Date.now();
-  localStorage.setItem("alunexa_config_vehiculo_v1", JSON.stringify(configVehiculo));
+  localStorage.setItem("demo_config_vehiculo_v1", JSON.stringify(configVehiculo));
   backendFetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ tipo: "vehiculo", payload: [configVehiculo] }) });
   renderVistaResumen();
 }
@@ -2373,7 +2373,7 @@ function guardarConfigNegocio() {
     logo:      nuevoLogo || "",
     actualizadoEn: Date.now()
   };
-  localStorage.setItem("alunexa_config_negocio_v1", JSON.stringify(configNegocio));
+  localStorage.setItem("demo_config_negocio_v1", JSON.stringify(configNegocio));
   backendFetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ tipo: "negocio", payload: [configNegocio] }) });
   alert("✅ Configuración guardada.");
   renderApp();
@@ -4447,7 +4447,7 @@ function registrarGastoVehiculo() {
 function guardarKmMes() {
   kmPorMes[mesResumen] = parseInt(document.getElementById("inputKmMes").value) || 0;
   configVehiculo.actualizadoEn = Date.now();
-  localStorage.setItem("alunexa_config_vehiculo_v1", JSON.stringify(configVehiculo));
+  localStorage.setItem("demo_config_vehiculo_v1", JSON.stringify(configVehiculo));
   backendFetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ tipo: "vehiculo", payload: [configVehiculo] }) });
   renderVistaResumen();
 }
@@ -4749,8 +4749,8 @@ function cargarJsPDF() {
 }
 
 function obtenerNroFactura() {
-  const n = parseInt(localStorage.getItem("alunexa_nro_factura") || "0") + 1;
-  localStorage.setItem("alunexa_nro_factura", n);
+  const n = parseInt(localStorage.getItem("demo_nro_factura") || "0") + 1;
+  localStorage.setItem("demo_nro_factura", n);
   return n;
 }
 
