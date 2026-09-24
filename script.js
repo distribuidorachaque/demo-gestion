@@ -5118,5 +5118,78 @@ function initOfflineIndicator() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// LICENCIA / ACTIVACIÓN
+// ═══════════════════════════════════════════════════════════════
+// URL de TU panel de licencias (central, el mismo para todos los clientes).
+// Se completa UNA sola vez con la dirección de tu panel. Mientras diga
+// "PEGAR..." la app NO pide código (modo libre, sirve para probar).
+const LICENCIA_URL = "PEGAR_AQUI_LA_URL_DE_TU_PANEL";
+const DIAS_GRACIA_SIN_INTERNET = 7; // si no hay internet, sigue andando estos días desde el último chequeo OK
+
+let licencia = JSON.parse(localStorage.getItem("demo_licencia_v1") || "null") || { codigo: "", activa: false, ultimoOk: 0, cliente: "" };
+
+function licenciaExigida() {
+  return typeof LICENCIA_URL === "string" && LICENCIA_URL.indexOf("http") === 0;
+}
+
+async function verificarLicencia() {
+  if (!licenciaExigida()) return true;   // no configuraste panel -> modo libre
+  if (!licencia.codigo) return false;    // nunca activó
+  try {
+    const r = await fetch(LICENCIA_URL + "?codigo=" + encodeURIComponent(licencia.codigo));
+    const data = await r.json();
+    if (data && data.activa) {
+      licencia.activa = true;
+      licencia.cliente = data.cliente || licencia.cliente;
+      licencia.ultimoOk = Date.now();
+      localStorage.setItem("demo_licencia_v1", JSON.stringify(licencia));
+      return true;
+    }
+    licencia.activa = false;
+    localStorage.setItem("demo_licencia_v1", JSON.stringify(licencia));
+    return false;
+  } catch (e) {
+    // Sin internet: damos gracia si el último chequeo OK fue reciente.
+    const dias = (Date.now() - (licencia.ultimoOk || 0)) / 86400000;
+    return licencia.activa && dias <= DIAS_GRACIA_SIN_INTERNET;
+  }
+}
+
+function mostrarPantallaActivacion(msg) {
+  document.getElementById("app").innerHTML = `
+    <div style="max-width:420px; margin:60px auto; padding:24px; text-align:center;">
+      <div style="font-size:48px; margin-bottom:8px;">🔒</div>
+      <h1 style="font-size:22px; margin:0 0 6px;">Activar la app</h1>
+      <p class="muted" style="margin:0 0 18px;">Ingresá el código de activación que te dieron para empezar a usar el sistema.</p>
+      <input id="inputCodigoLicencia" type="text" placeholder="Código de activación" style="width:100%; padding:12px; font-size:16px; text-align:center; border:1px solid #cbd5e1; border-radius:10px; margin-bottom:10px;" />
+      <button class="btn-primary btn-full" onclick="activarConCodigo(document.getElementById('inputCodigoLicencia').value)">Activar</button>
+      ${msg ? `<p style="color:#dc2626; margin-top:12px;">${msg}</p>` : ""}
+    </div>
+  `;
+}
+
+async function activarConCodigo(codigo) {
+  codigo = (codigo || "").trim();
+  if (!codigo) { mostrarPantallaActivacion("Escribí el código."); return; }
+  licencia.codigo = codigo;
+  localStorage.setItem("demo_licencia_v1", JSON.stringify(licencia));
+  mostrarPantallaActivacion("Verificando…");
+  const ok = await verificarLicencia();
+  if (ok) iniciarApp();
+  else mostrarPantallaActivacion("Ese código no está activo. Revisalo o escribile a quien te dio la app.");
+}
+
+// Arranque: primero chequea la licencia; si está OK, arranca la app normal.
+async function arranque() {
+  const ok = await verificarLicencia();
+  if (ok) iniciarApp();
+  else mostrarPantallaActivacion();
+}
+
+function iniciarApp() {
+  cargarDatos();
+}
+
+// ═══════════════════════════════════════════════════════════════
 initOfflineIndicator();
-cargarDatos();
+arranque();
